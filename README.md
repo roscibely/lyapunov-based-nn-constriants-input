@@ -1,1 +1,1 @@
-# lyapunov-based-nn-constriants-input
+# Lyapunov-based neural network with input constraints
