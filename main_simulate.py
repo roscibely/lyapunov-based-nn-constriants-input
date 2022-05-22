@@ -45,14 +45,8 @@ while not valid:
       # ∑∂V/∂xᵢ*fᵢ
       L_V = torch.diagonal(torch.mm(torch.mm(torch.mm(model.dtanh(V_candidate),model.second_layer.weight)\
                           *model.dtanh(torch.tanh(torch.mm(input_data,model.first_layer.weight.t())+model.first_layer.bias)),model.first_layer.weight),f.t()),0)
-      #------------------------------------------------------------------
-      # loss function. note: relu function is max{0,x} function 
-      # control input constraints umin <= u <= umax
-      #  umin <= u: F.relu(u-umin)
-      #  u<= umax : F.relu(u+umaxn)
       emperical_risk = (F.relu(-V_candidate)+ 1.5*F.relu(L_V+0.5)).mean()\
-                  +2.2*((learning_lyapunov.norm_l2(input_data)-6*V_candidate).pow(2)).mean()+(V0).pow(2) + (F.relu(-u+100) + F.relu(u+50)).mean()
-      #------------------------------------------------------------------            
+                  +2.2*((learning_lyapunov.norm_l2(input_data)-6*V_candidate).pow(2)).mean()+(V0).pow(2) + (F.relu(-u+100) + F.relu(u+50)).mean() 
       print('Epoch %2s/%s \n [==================] Empirical risk: %10.6f' % (epoch, epochs,emperical_risk.item())) 
       loss_values.append(emperical_risk.item())
       optimizer.zero_grad()
