@@ -63,7 +63,6 @@ class NeuralNetwork(torch.nn.Module):
         # Derivative of activation
         return 1.0 - x**2
         
-    @staticmethod
     def umax(self, signal):
         """
         Args: 
