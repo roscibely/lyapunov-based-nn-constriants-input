@@ -37,24 +37,26 @@ while not valid:
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     start = timeit.default_timer()
     while epoch < epochs and not valid: 
-      # network output
-      V_candidate, u = model(input_data) 
-      V0,u0 = model(x_0)
-      # system model 
-      f = dynamic_model.system(input_data,u)
-      # ∑∂V/∂xᵢ*fᵢ
-      L_V = torch.diagonal(torch.mm(torch.mm(torch.mm(model.dtanh(V_candidate),model.second_layer.weight)\
-                          *model.dtanh(torch.tanh(torch.mm(input_data,model.first_layer.weight.t())+model.first_layer.bias)),model.first_layer.weight),f.t()),0)
-      emperical_risk = (F.relu(-V_candidate)+ 1.5*F.relu(L_V+0.5)).mean()\
-                  +2.2*((learning_lyapunov.norm_l2(input_data)-6*V_candidate).pow(2)).mean()+(V0).pow(2) + (F.relu(-u+100) + F.relu(u+50)).mean() 
+      V_candidate, u = model(input_data)        # network output
+      V0, _ = model(x_0)
+      f = dynamic_model.system(input_data,u)    # system model 
+      
+      lypaunov_derivative = torch.diagonal(torch.mm(torch.mm(
+        torch.mm(model.derivative(V_candidate),model.second_layer.weight)\
+                          *model.derivative(torch.tanh(torch.mm(input_data,model.first_layer.weight.t())
+                          +model.first_layer.bias)),model.first_layer.weight),f.t()),0)
+      
+      emperical_risk = (F.relu(-V_candidate)+ 1.5*F.relu(lypaunov_derivative+0.5)).mean()\
+                  +2.2*((learning_lyapunov.norm_l2(input_data)-6*V_candidate).pow(2)).mean()\
+                  +(V0).pow(2) + (F.relu(-u+100) + F.relu(u+50)).mean()           
+      
       print('Epoch %2s/%s \n [==================] Empirical risk: %10.6f' % (epoch, epochs,emperical_risk.item())) 
       loss_values.append(emperical_risk.item())
       optimizer.zero_grad()
       emperical_risk.backward()
       optimizer.step() 
       control = model.control.weight.data.numpy()
-      # verification of Lyapunov conditions each 10 epochs 
-      if epoch % 10 == 0:                 
+      if epoch % 10 == 0: # verification of Lyapunov conditions each 10 epochs                 
           f = dynamic_model.system_expression(x1, x2, control=control)
           V_learn = learning_lyapunov.lyapunov_candidate_construction(model=model,
                                                                       system_states=system_states,
@@ -75,8 +77,9 @@ while not valid:
     print("Verified time: ", total_time_sum)
     print("Control: ",model.control.weight.data)
 
-
+#------------------------------------------------------------------------
 # plot function 
+#------------------------------------------------------------------------
 numpoints = 100                                   # define resolution
 domain=6                                          # {xᵢ|-6≤ xᵢ ≤6}
 # define plotting range and mesh
@@ -85,7 +88,3 @@ y = np.linspace(-domain, domain, numpoints)
 X, Y = np.meshgrid(x, y)
 V = sy.lambdify([x1,x2], V_learn, "numpy")
 learning_lyapunov.Plot_function(X, Y, V(X,Y),xlabel="x",ylabel="y",zlabel="V(x)")
-
-# 2D
-#plt.plot(V(x,y))
-#plt.grid(True)
