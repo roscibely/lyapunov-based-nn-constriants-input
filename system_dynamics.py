@@ -35,6 +35,14 @@ class SystemDynamics():
         return y
 
     def system_expression(self, x1, x2, control):
+        """
+        Agrs: 
+            x1: pendulum position 
+            x2: pendulum angle
+            control: control signal 
+        Return: 
+            f: system output  
+        """
 
         # network control
         u_NN = (control.item(0)*x1 + control.item(1)*x2) 
