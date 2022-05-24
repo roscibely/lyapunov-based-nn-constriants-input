@@ -40,13 +40,7 @@ class NeuralNetwork(torch.nn.Module):
         # network output V(x) = tanh(∑w.x_i)  
         lyapunov_candidate = activation_function(self.second_layer(x_i))
         # control u(x) =  ∑ w.x
-        # control input constraints umin <= u <= umax
-        """
-        umin = torch.nn.Threshold(self.control_min, self.control_min)
-        umax = torch.nn.Threshold(-(abs(self.control_max-1)),self.control_max)
-        control_function_min = umin(self.control(x))    # u should be > control_min
-        control_function = umax(-control_function_min)  # u should be < control_max 
-        """    
+        # control input constraints umin <= u <= umax 
         umin = torch.nn.Threshold(self.control_min, self.control_min) 
         control_function_min = umin(self.control(x))            # u should be > control_min
         control_function = self.umax(control_function_min)      # u should be < control_max    
