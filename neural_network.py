@@ -1,4 +1,5 @@
 import torch
+from dreal import *
 
 class NeuralNetwork(torch.nn.Module):
     
@@ -26,7 +27,7 @@ class NeuralNetwork(torch.nn.Module):
         self.control_max = control_max
         self.control_min = control_min
 
-    def forward(self,x):
+    def forward(self, x):
         """
         Args: 
             x: system dataset 
@@ -35,19 +36,21 @@ class NeuralNetwork(torch.nn.Module):
             control_function: Possible control function u(x) for system x
         """
         activation_function = torch.nn.Tanh()
-        # set tanh() as activation function in the first hidden layer
-        x_i = activation_function(self.first_layer(x))
-        # network output V(x) = tanh(∑w.x_i)  
+
+        # Apply input constraints to the input data
+        constrained_x = torch.clamp(x, self.control_min, self.control_max)
+
+        x_i = activation_function(self.first_layer(constrained_x))
         lyapunov_candidate = activation_function(self.second_layer(x_i))
-        # control u(x) =  ∑ w.x
-        # control input constraints umin <= u <= umax 
-        umin = torch.nn.Threshold(self.control_min, self.control_min) 
-        control_function_min = umin(self.control(x))            # u should be > control_min
-        control_function = self.umax(control_function_min)      # u should be < control_max    
+
+        # Apply input constraints to the control function
+        constrained_control = torch.clamp(self.control(constrained_x), self.control_min, self.control_max)
+        control_function = activation_function(constrained_control)
+
         return lyapunov_candidate, control_function
 
   
-    def dtanh(self,x):
+    def derivative(self,x):
         """
         Args: 
             x: variable 
